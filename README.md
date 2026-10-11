@@ -1,12 +1,6 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" />
-</div>
+# Jogatix
 
-# Run and deploy your AI Studio app
-
-This contains everything you need to run your app locally.
-
-View your app in AI Studio: https://ai.studio/apps/63f8e4c3-402c-4347-8edc-14a9f57ec01d
+Platform transaksi digital untuk pulsa, paket data, uang elektronik, PLN, dan pembayaran berbagai tagihan. Dibangun dengan Next.js 15 (App Router) + TypeScript.
 
 ## Run Locally
 
