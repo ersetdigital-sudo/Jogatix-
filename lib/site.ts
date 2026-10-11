@@ -36,6 +36,3 @@ export const footerInfoLinks: NavItem[] = [
   { label: "Kebijakan Privasi", href: "/bantuan#kebijakan" },
   { label: "Syarat dan Ketentuan", href: "/bantuan#ketentuan" },
 ];
-
-export const footerDisclaimer =
-  "Harga, ketersediaan produk, dan waktu pemrosesan mengikuti informasi yang ditampilkan saat transaksi serta ketentuan penyedia layanan.";

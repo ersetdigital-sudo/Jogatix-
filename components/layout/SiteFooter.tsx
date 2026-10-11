@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { footerDisclaimer, footerInfoLinks } from "@/lib/site";
+import { BrandBoltIcon } from "@/components/icons";
+import { footerInfoLinks } from "@/lib/site";
 import { serviceLinks } from "@/lib/services";
 
 export function SiteFooter() {
@@ -10,7 +11,14 @@ export function SiteFooter() {
       <div className="container">
         <div className="footer-grid">
           <div className="footer-brand">
-            <h3>Jogatix</h3>
+            <Link href="/" className="footer-brand-logo" aria-label="Jogatix Beranda">
+              <span className="brand-icon-mark" aria-hidden="true">
+                <BrandBoltIcon width={20} height={20} />
+              </span>
+              <span className="footer-brand-name">
+                Joga<span>tix</span>
+              </span>
+            </Link>
             <p className="footer-brand-desc">
               Solusi transaksi digital untuk kebutuhan sehari-hari. Beli pulsa, paket data, token
               listrik, top up uang elektronik, hingga bayar berbagai tagihan dalam satu platform.
@@ -45,7 +53,6 @@ export function SiteFooter() {
         </div>
 
         <div className="footer-bottom">
-          <div className="footer-bottom-disclaimer">{footerDisclaimer}</div>
           <div className="footer-bottom-copy">
             &copy; <span className="current-year">{year}</span> Jogatix. Hak Cipta Dilindungi.
           </div>

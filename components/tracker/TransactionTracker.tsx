@@ -7,15 +7,6 @@ import { useSearchParam } from "@/hooks/use-search-param";
 import { STATUS_PILL_CLASS, lookupOrder } from "@/lib/transactions";
 import type { Order } from "@/types";
 
-/** Demo order ids shown as one-click shortcuts. */
-const SAMPLE_IDS: { id: string; title: string }[] = [
-  { id: "JGX-7749210", title: "Pulsa Telkomsel - Berhasil" },
-  { id: "JGX-8829104", title: "Token PLN - Berhasil" },
-  { id: "JGX-9014521", title: "GoPay - Sedang diproses" },
-  { id: "JGX-6102934", title: "IndiHome - Menunggu pembayaran" },
-  { id: "JGX-4198273", title: "Indosat - Belum berhasil" },
-];
-
 /** Short pill label for the result badge. */
 const BADGE_LABEL: Record<Order["status"], string> = {
   SUCCESS: "Berhasil Dikonfirmasi",
@@ -97,21 +88,6 @@ export function TransactionTracker() {
             Periksa Transaksi
             <SearchIcon width={16} height={16} strokeWidth={2.2} />
           </button>
-        </div>
-
-        <div className="sample-ids-row">
-          <span>Contoh ID terdaftar:</span>
-          {SAMPLE_IDS.map((sample) => (
-            <button
-              key={sample.id}
-              type="button"
-              className="sample-id-btn"
-              title={sample.title}
-              onClick={() => search(sample.id)}
-            >
-              {sample.id}
-            </button>
-          ))}
         </div>
       </div>
 

@@ -2091,33 +2091,6 @@ button, input, select, textarea {
   box-shadow: 0 0 0 3px rgba(67, 56, 202, 0.12);
 }
 
-.sample-ids-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-  font-size: 13px;
-  color: var(--color-text-muted);
-}
-
-.sample-id-btn {
-  background: #F1F5F9;
-  border: 1px solid #E2E8F0;
-  padding: 4px 10px;
-  border-radius: var(--radius-sm);
-  font-family: var(--font-mono);
-  font-size: 12.5px;
-  font-weight: 600;
-  color: var(--color-primary);
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.sample-id-btn:hover {
-  background: var(--color-primary-light);
-  border-color: var(--color-primary-border);
-}
-
 .tx-result-card {
   display: none;
   background: #FFFFFF;
@@ -2295,13 +2268,20 @@ button, input, select, textarea {
   max-width: 480px;
 }
 
-.footer-brand h3 {
+.footer-brand-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
   font-family: var(--font-heading);
   font-size: 24px;
   font-weight: 800;
+  letter-spacing: -0.03em;
   color: #FFFFFF;
-  margin-bottom: 12px;
-  letter-spacing: -0.02em;
+  margin-bottom: 14px;
+}
+
+.footer-brand-name span {
+  color: var(--color-lime);
 }
 
 .footer-brand p {
@@ -2347,19 +2327,12 @@ button, input, select, textarea {
 
 .footer-bottom {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
   padding-top: 28px;
   font-size: 13px;
   gap: 24px;
   flex-wrap: wrap;
-}
-
-.footer-bottom-disclaimer {
-  max-width: 680px;
-  line-height: 1.55;
-  color: #8292A6;
-  font-size: 12.5px;
 }
 
 .footer-bottom-copy {
@@ -2547,7 +2520,7 @@ button, input, select, textarea {
   }
   .footer-bottom {
     flex-direction: column;
-    align-items: flex-start;
+    align-items: center;
     gap: 14px;
     padding-top: 24px;
   }
@@ -2689,9 +2662,9 @@ button, input, select, textarea {
     gap: 26px;
     padding-bottom: 28px;
   }
-  .footer-brand h3 {
+  .footer-brand-logo {
     font-size: 22px;
-    margin-bottom: 8px;
+    margin-bottom: 10px;
   }
   .footer-brand-desc {
     font-size: 13px;
@@ -2709,10 +2682,6 @@ button, input, select, textarea {
   .footer-links-grid, .footer-links-list {
     gap: 8px;
     font-size: 13px;
-  }
-  .footer-bottom-disclaimer {
-    font-size: 11.5px;
-    line-height: 1.5;
   }
   .footer-bottom-copy {
     font-size: 11.5px;

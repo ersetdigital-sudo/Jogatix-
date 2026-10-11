@@ -6,8 +6,6 @@
 
   const searchInput = document.getElementById('tx-search-input');
   const searchBtn = document.getElementById('tx-search-btn');
-  const sampleBtns = document.querySelectorAll('.sample-id-btn');
-
   const resultCard = document.getElementById('tx-result-card');
   const notFoundCard = document.getElementById('tx-not-found-card');
 
@@ -188,15 +186,6 @@
       }
     });
   }
-
-  // Sample ID click buttons
-  sampleBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-      const id = btn.textContent.trim();
-      if (searchInput) searchInput.value = id;
-      lookupTransaction(id);
-    });
-  });
 
   // URL query parameter auto-lookup (?id=...)
   const urlParam = new URLSearchParams(window.location.search).get('id');
