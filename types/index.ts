@@ -105,6 +105,15 @@ export interface AdminSettings {
   adminFeeBill: number;
 }
 
+/**
+ * The subset of `AdminSettings` the public storefront is allowed to read.
+ * The WhatsApp message templates stay server/admin-side.
+ */
+export type PublicSettings = Omit<
+  AdminSettings,
+  "whatsappTemplateOrder" | "whatsappTemplateSuccess"
+>;
+
 /** A product row as edited inside the admin console. */
 export interface AdminProduct {
   id: string;

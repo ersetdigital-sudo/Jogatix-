@@ -5,11 +5,11 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { ArrowRightIcon, ClockCheckIcon, SearchIcon } from "@/components/icons";
 import { useSearchParam } from "@/hooks/use-search-param";
-import { getCategory, categories, isCategorySlug } from "@/lib/catalog";
+import { isCategorySlug } from "@/lib/catalog";
+import { useLiveCatalog } from "@/hooks/use-live-catalog";
+import { apiFetch } from "@/lib/fetcher";
 import { rupiah, toWhatsAppLink } from "@/lib/format";
-import { getSettings } from "@/lib/admin-defaults";
-import { getOrders, saveOrders } from "@/lib/transactions";
-import type { AdminSettings, CategorySlug, Order, Product } from "@/types";
+import type { CategorySlug, Order, Product, PublicSettings } from "@/types";
 
 const PREPAID = "prabayar";
 const STEPPER = ["Data Pelanggan", "Pilih Produk", "Ringkasan", "Pembayaran", "Hasil"];
@@ -52,10 +52,14 @@ export function CheckoutFlow() {
   const [custError, setCustError] = useState("");
   const [providerError, setProviderError] = useState("");
   const [stage2Error, setStage2Error] = useState("");
-  const [settings] = useState<AdminSettings>(() => getSettings());
+  const [creatingOrder, setCreatingOrder] = useState(false);
+  const [orderError, setOrderError] = useState("");
+
+  // Products and the customer-facing settings are served live from Supabase.
+  const { categories, settings } = useLiveCatalog();
 
   const slug: CategorySlug = slugOverride ?? (isCategorySlug(urlKategori) ? urlKategori : "pulsa");
-  const category = getCategory(slug) ?? categories[0];
+  const category = categories.find((c) => c.slug === slug) ?? categories[0];
   const isPrepaid = category.type === PREPAID;
   const customer = customerOverride ?? (urlCust || "");
   const provider =
@@ -73,14 +77,14 @@ export function CheckoutFlow() {
           note: "",
           price: BILL_AMOUNT,
           isBill: true,
-          adminFee: category.adminFee ?? 2500,
+          adminFee: settings?.adminFeeBill ?? category.adminFee ?? 2500,
         },
       ];
   // A ?produk= param pre-selects the matching product without an effect.
   const requestedItem = urlProduk ? lineItems.find((i) => i.id === urlProduk) ?? null : null;
   const product = productOverride !== undefined ? productOverride : requestedItem;
   const activeItem = product ?? lineItems[0] ?? null;
-  const admin = activeItem?.isBill ? (category.adminFee ?? 2500) : 0;
+  const admin = activeItem?.isBill ? (settings?.adminFeeBill ?? category.adminFee ?? 2500) : 0;
   const total = activeItem ? activeItem.price + admin : 0;
 
   // A valid ?cust= skips straight to product selection.
@@ -138,30 +142,46 @@ export function CheckoutFlow() {
     setStage2Error("");
   }
 
-  function createOrder() {
-    const orderId = generateOrderId();
+  /**
+   * Persists the order to Supabase. Returns `false` when the server rejects it
+   * (validation error or a duplicate ID), leaving the customer on stage 3 with
+   * an inline message instead of advancing to a fake success screen.
+   */
+  async function createOrder(): Promise<boolean> {
     const fullProduct = `${activeProvider ? `${activeProvider} — ` : ""}${activeItem?.name ?? ""}`;
-    const created: Order = {
-      id: orderId,
-      category: category.name,
-      categorySlug: category.slug,
-      provider: activeProvider,
-      product: fullProduct,
-      customer,
-      total,
-      totalFormatted: rupiah(total),
-      paymentMethod: paymentMethod.toUpperCase(),
-      createdAt: new Date().toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" }),
-      sn: generateSN(activeProvider),
-      status: "SUCCESS",
-      statusLabel: "Berhasil Dikonfirmasi",
-      systemMessage: "Transaksi telah berhasil diproses oleh provider dan diteruskan ke pelanggan.",
-    };
-    setOrder(created);
 
-    const orders = getOrders();
-    orders[orderId] = created;
-    saveOrders(orders);
+    setCreatingOrder(true);
+    setOrderError("");
+    try {
+      const { order: created } = await apiFetch<{ order: Order }>("/api/orders", {
+        method: "POST",
+        body: JSON.stringify({
+          id: generateOrderId(),
+          category: category.name,
+          categorySlug: category.slug,
+          provider: activeProvider,
+          product: fullProduct,
+          customer,
+          total,
+          totalFormatted: rupiah(total),
+          paymentMethod: paymentMethod.toUpperCase(),
+          sn: generateSN(activeProvider),
+          status: "SUCCESS",
+          statusLabel: "Berhasil Dikonfirmasi",
+          systemMessage:
+            "Transaksi telah berhasil diproses oleh provider dan diteruskan ke pelanggan.",
+        }),
+      });
+      setOrder(created);
+      return true;
+    } catch (error) {
+      setOrderError(
+        error instanceof Error ? error.message : "Gagal membuat pesanan. Silakan coba lagi.",
+      );
+      return false;
+    } finally {
+      setCreatingOrder(false);
+    }
   }
 
   function handleConfirmPayment() {
@@ -384,7 +404,7 @@ export function CheckoutFlow() {
                   }}
                 >
                   <span>Biaya Administrasi:</span>
-                  <b>{rupiah(category.adminFee ?? 2500)}</b>
+                  <b>{rupiah(settings?.adminFeeBill ?? category.adminFee ?? 2500)}</b>
                 </div>
               </div>
             )}
@@ -465,20 +485,32 @@ export function CheckoutFlow() {
             </div>
           </div>
 
+          {orderError && (
+            <div id="stage-3-error" style={{ color: "#DC2626", fontSize: 13.5, marginBottom: 16 }}>
+              {orderError}
+            </div>
+          )}
+
           <div style={{ display: "flex", gap: 14, justifyContent: "space-between" }}>
-            <button type="button" className="btn-secondary" id="btn-stage3-back" onClick={() => goToStage(2)}>
+            <button
+              type="button"
+              className="btn-secondary"
+              id="btn-stage3-back"
+              disabled={creatingOrder}
+              onClick={() => goToStage(2)}
+            >
               Ubah Pesanan
             </button>
             <button
               type="button"
               className="btn-primary"
               id="btn-stage3-next"
-              onClick={() => {
-                createOrder();
-                goToStage(4);
+              disabled={creatingOrder}
+              onClick={async () => {
+                if (await createOrder()) goToStage(4);
               }}
             >
-              Lanjut ke Pembayaran &rarr;
+              {creatingOrder ? "Menyimpan pesanan…" : "Lanjut ke Pembayaran →"}
             </button>
           </div>
         </div>
@@ -721,7 +753,7 @@ function PaymentInstructions({
 }: {
   method: PaymentMethod;
   order: Order | null;
-  settings: AdminSettings | null;
+  settings: PublicSettings | null;
   waText: string;
 }) {
   if (!order || !settings) return null;

@@ -4,7 +4,8 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { ArrowRightIcon, CategoryIcon, SearchIcon } from "@/components/icons";
 import { useSearchParam } from "@/hooks/use-search-param";
-import { categories, getCategory, isCategorySlug } from "@/lib/catalog";
+import { isCategorySlug } from "@/lib/catalog";
+import { useLiveCatalog } from "@/hooks/use-live-catalog";
 import { normalizeCustomerId, rupiah } from "@/lib/format";
 import type { CategorySlug, Product } from "@/types";
 
@@ -24,8 +25,11 @@ export function ServiceDesk() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [error, setError] = useState("");
 
+  // Products come from Supabase (with the static catalog as the initial value).
+  const { categories } = useLiveCatalog();
+
   const slug: CategorySlug = slugOverride ?? (isCategorySlug(urlKategori) ? urlKategori : DEFAULT_SLUG);
-  const category = getCategory(slug) ?? categories[0];
+  const category = categories.find((c) => c.slug === slug) ?? categories[0];
   const isPrepaid = category.type === PREPAID;
   const provider =
     selectedProvider ??
@@ -40,7 +44,7 @@ export function ServiceDesk() {
       (c) =>
         c.name.toLowerCase().includes(q) || c.desc.toLowerCase().includes(q) || c.slug.includes(q),
     );
-  }, [search]);
+  }, [categories, search]);
 
   function selectCategory(next: CategorySlug) {
     setSlugOverride(next);

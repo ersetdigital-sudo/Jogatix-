@@ -1,10 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { CloseCircleIcon, SearchIcon } from "@/components/icons";
 import { useSearchParam } from "@/hooks/use-search-param";
-import { STATUS_PILL_CLASS, lookupOrder } from "@/lib/transactions";
+import { STATUS_PILL_CLASS } from "@/lib/transactions";
 import type { Order } from "@/types";
 
 /** Short pill label for the result badge. */
@@ -20,14 +20,43 @@ export function TransactionTracker() {
   const [query, setQuery] = useState("");
   const [touched, setTouched] = useState(false);
   const [lookupId, setLookupId] = useState<string | null>(null);
+  // The resolved lookup for `id`. Kept as one value so the loading state is
+  // derived instead of toggled, which avoids setState inside the effect body.
+  const [resolved, setResolved] = useState<{ id: string; order: Order | null } | null>(null);
   const resultRef = useRef<HTMLDivElement>(null);
   const notFoundRef = useRef<HTMLDivElement>(null);
 
   // An explicit search wins; otherwise fall back to the ?id= param until the user edits.
   const activeId = (lookupId ?? (!touched && urlId ? urlId.toUpperCase() : "")).trim();
-  const order = useMemo<Order | null>(() => (activeId ? lookupOrder(activeId) ?? null : null), [activeId]);
-  const notFoundId = activeId && !order ? activeId : null;
   const inputValue = touched ? query : urlId;
+
+  const match = activeId && resolved?.id === activeId ? resolved : null;
+  const loading = Boolean(activeId) && !match;
+  const order = match ? match.order : null;
+
+  // Orders live in Supabase, so each lookup is a request to /api/orders/[id].
+  useEffect(() => {
+    if (!activeId) return;
+
+    const controller = new AbortController();
+
+    fetch(`/api/orders/${encodeURIComponent(activeId)}`, { signal: controller.signal })
+      .then(async (response) => {
+        if (response.status === 404) return null;
+        if (!response.ok) throw new Error(`Lookup failed (${response.status})`);
+        return ((await response.json()) as { order: Order }).order;
+      })
+      .then((found) => setResolved({ id: activeId, order: found }))
+      .catch((error: unknown) => {
+        if (error instanceof Error && error.name === "AbortError") return;
+        // Treat any transport error as "not found" rather than leaving a spinner.
+        setResolved({ id: activeId, order: null });
+      });
+
+    return () => controller.abort();
+  }, [activeId]);
+
+  const notFoundId = !loading && activeId && !order ? activeId : null;
 
   function search(rawId: string) {
     setTouched(true);
@@ -41,7 +70,7 @@ export function TransactionTracker() {
     else if (notFoundId) notFoundRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
   }, [order, notFoundId]);
 
-  const showResult = !notFoundId;
+  const showResult = !notFoundId && !loading;
 
   const notFoundCardStyle: CSSProperties = {
     background: "#FFFFFF",
@@ -90,6 +119,23 @@ export function TransactionTracker() {
           </button>
         </div>
       </div>
+
+      {loading && (
+        <div
+          style={{
+            marginTop: 20,
+            padding: "18px 22px",
+            background: "#F8FAFC",
+            border: "1px solid #E4E7F0",
+            borderRadius: 12,
+            fontSize: 14,
+            color: "#646982",
+            textAlign: "center",
+          }}
+        >
+          Memeriksa transaksi <strong style={{ color: "#0E1126" }}>{activeId}</strong>…
+        </div>
+      )}
 
       {/* Result card (found / idle) */}
       <div className="tx-result-card" id="tx-result-card" ref={resultRef} style={showResult ? undefined : { display: "none" }}>
@@ -242,7 +288,7 @@ export function TransactionTracker() {
             {notFoundId ?? ""}
           </strong>{" "}
           tidak terdaftar dalam catatan sistem Jogatix. Pastikan kamu memasukkan ID yang tepat
-          (contoh: JGX-7749210) atau periksa kembali bukti pesananmu.
+          (contoh: JGX-1234567) atau periksa kembali bukti pesananmu.
         </p>
         <Link href="/bantuan" className="btn-secondary" style={{ fontSize: 13.5 }}>
           Buka Halaman Bantuan

@@ -1,16 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useMemo, useRef, useState } from "react";
-import {
-  CATEGORY_NAMES,
-  getProducts,
-  getSettings,
-  saveProducts,
-  saveSettings,
-} from "@/lib/admin-defaults";
-import { STORAGE_KEYS, removeKey } from "@/lib/storage";
-import { getOrders, saveOrders } from "@/lib/transactions";
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { CATEGORY_NAMES, buildDefaultProducts } from "@/lib/admin-defaults";
+import { apiFetch } from "@/lib/fetcher";
 import { rupiah } from "@/lib/format";
 import type { AdminProduct, AdminSettings, BankAccount, CategorySlug, Order, OrderStatus } from "@/types";
 
@@ -55,13 +49,16 @@ function Stroke({ children, ...props }: React.SVGProps<SVGSVGElement>) {
 }
 
 export function AdminConsole() {
+  const router = useRouter();
   const [view, setView] = useState<AdminView>("overview");
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  // This console is rendered client-only (see AdminConsoleClient), so state can be
-  // hydrated straight from localStorage during the initial render.
-  const [settings, setSettings] = useState<AdminSettings>(getSettings);
-  const [products, setProducts] = useState<AdminProduct[]>(getProducts);
-  const [orders, setOrders] = useState<Record<string, Order>>(() => getOrders());
+  // The console renders client-only (see AdminConsoleClient) and hydrates from
+  // the Supabase-backed admin routes. `settings === null` therefore means "not
+  // loaded yet" and gates the whole dashboard below.
+  const [settings, setSettings] = useState<AdminSettings | null>(null);
+  const [products, setProducts] = useState<AdminProduct[]>([]);
+  const [orders, setOrders] = useState<Record<string, Order>>({});
+  const [loadFailed, setLoadFailed] = useState(false);
   const [toasts, setToasts] = useState<Toast[]>([]);
 
   // Modal visibility state (ids are null for "create" mode).
@@ -71,26 +68,162 @@ export function AdminConsole() {
   const [txModal, setTxModal] = useState<{ open: boolean; id: string | null }>({ open: false, id: null });
   const [manualModal, setManualModal] = useState(false);
 
+  // Mirror of `orders` so persistOrders can diff against the last known state
+  // without being re-created on every change.
+  const ordersRef = useRef(orders);
+  useEffect(() => {
+    ordersRef.current = orders;
+  }, [orders]);
+
   const pushToast = useCallback((message: string, type: ToastType = "success") => {
     const id = Date.now() + Math.random();
     setToasts((current) => [...current, { id, message, type }]);
     setTimeout(() => setToasts((current) => current.filter((t) => t.id !== id)), 3200);
   }, []);
 
-  const persistSettings = useCallback((next: AdminSettings) => {
-    setSettings(next);
-    saveSettings(next);
+  /** Pure fetch: no state updates, so callers decide when to apply the result. */
+  const fetchConsoleData = useCallback(async () => {
+    const [settingsData, productsData, ordersData] = await Promise.all([
+      apiFetch<{ settings: AdminSettings }>("/api/admin/settings"),
+      apiFetch<{ products: AdminProduct[] }>("/api/admin/products"),
+      apiFetch<{ orders: Record<string, Order> }>("/api/admin/orders"),
+    ]);
+    return {
+      settings: settingsData.settings,
+      products: productsData.products,
+      orders: ordersData.orders,
+    };
   }, []);
 
-  const persistProducts = useCallback((next: AdminProduct[]) => {
-    setProducts(next);
-    saveProducts(next);
-  }, []);
+  const applyConsoleData = useCallback(
+    (data: { settings: AdminSettings; products: AdminProduct[]; orders: Record<string, Order> }) => {
+      setSettings(data.settings);
+      setProducts(data.products);
+      setOrders(data.orders);
+      ordersRef.current = data.orders;
+      setLoadFailed(false);
+    },
+    [],
+  );
 
-  const persistOrders = useCallback((next: Record<string, Order>) => {
-    setOrders(next);
-    saveOrders(next);
-  }, []);
+  /** A 401 means the session expired, so bounce back to the login screen. */
+  const handleLoadFailure = useCallback(
+    (error: unknown) => {
+      if (error instanceof Error && error.name === "ApiError401") {
+        router.replace("/admin/login");
+        return;
+      }
+      setLoadFailed(true);
+    },
+    [router],
+  );
+
+  /** Re-reads everything; used by the retry button and after a failed write. */
+  const reload = useCallback(async () => {
+    try {
+      applyConsoleData(await fetchConsoleData());
+    } catch (error) {
+      handleLoadFailure(error);
+    }
+  }, [applyConsoleData, fetchConsoleData, handleLoadFailure]);
+
+  // Initial load. The result is applied from the promise callback instead of
+  // synchronously, so mounting never cascades an extra render.
+  useEffect(() => {
+    let cancelled = false;
+    fetchConsoleData()
+      .then((data) => {
+        if (!cancelled) applyConsoleData(data);
+      })
+      .catch((error: unknown) => {
+        if (!cancelled) handleLoadFailure(error);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [applyConsoleData, fetchConsoleData, handleLoadFailure]);
+
+  const handleLogout = useCallback(async () => {
+    try {
+      await fetch("/api/admin/session", { method: "DELETE" });
+    } catch {
+      /* Even if the request fails, send the admin back to the login screen. */
+    }
+    router.replace("/admin/login");
+    router.refresh();
+  }, [router]);
+
+  /** Any write failure surfaces as an error toast and a full reload from the DB. */
+  const reportFailure = useCallback(
+    (message: string) => {
+      pushToast(message, "error");
+      void reload();
+    },
+    [reload, pushToast],
+  );
+
+  const persistSettings = useCallback(
+    (next: AdminSettings) => {
+      setSettings(next);
+      apiFetch<{ settings: AdminSettings }>("/api/admin/settings", {
+        method: "PUT",
+        body: JSON.stringify(next),
+      })
+        .then(({ settings: saved }) => setSettings(saved))
+        .catch((error: unknown) =>
+          reportFailure(error instanceof Error ? error.message : "Gagal menyimpan pengaturan."),
+        );
+    },
+    [reportFailure],
+  );
+
+  const persistProducts = useCallback(
+    (next: AdminProduct[]) => {
+      setProducts(next);
+      apiFetch<{ products: AdminProduct[] }>("/api/admin/products", {
+        method: "PUT",
+        body: JSON.stringify(next),
+      })
+        .then(({ products: saved }) => setProducts(saved))
+        .catch((error: unknown) =>
+          reportFailure(error instanceof Error ? error.message : "Gagal menyimpan produk."),
+        );
+    },
+    [reportFailure],
+  );
+
+  const persistOrders = useCallback(
+    (next: Record<string, Order>) => {
+      const previous = ordersRef.current;
+      setOrders(next);
+      ordersRef.current = next;
+
+      // The modals hand back the whole map, so diff it to find what to write.
+      const writes: Promise<unknown>[] = [];
+      for (const order of Object.values(next)) {
+        const before = previous[order.id];
+        if (!before || JSON.stringify(before) !== JSON.stringify(order)) {
+          writes.push(
+            apiFetch(`/api/admin/orders/${encodeURIComponent(order.id)}`, {
+              method: "PUT",
+              body: JSON.stringify(order),
+            }),
+          );
+        }
+      }
+      for (const id of Object.keys(previous)) {
+        if (!next[id]) {
+          writes.push(apiFetch(`/api/admin/orders/${encodeURIComponent(id)}`, { method: "DELETE" }));
+        }
+      }
+
+      if (writes.length === 0) return;
+      Promise.all(writes).catch((error: unknown) =>
+        reportFailure(error instanceof Error ? error.message : "Gagal menyimpan transaksi."),
+      );
+    },
+    [reportFailure],
+  );
 
   const switchView = useCallback((next: AdminView) => {
     setView(next);
@@ -98,6 +231,10 @@ export function AdminConsole() {
   }, []);
 
   const meta = VIEW_META[view];
+
+  if (!settings) {
+    return loadFailed ? <ConsoleError onRetry={() => void reload()} /> : <ConsoleLoading />;
+  }
 
   return (
     <>
@@ -266,6 +403,20 @@ export function AdminConsole() {
                 </Stroke>
                 <span>Katalog Web</span>
               </Link>
+
+              <button
+                type="button"
+                className="btn-admin-action-alt"
+                title="Keluar dari dashboard admin"
+                onClick={() => void handleLogout()}
+              >
+                <Stroke width={15} height={15}>
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                  <polyline points="16 17 21 12 16 7" />
+                  <line x1="21" y1="12" x2="9" y2="12" />
+                </Stroke>
+                <span>Keluar</span>
+              </button>
 
               <div className="admin-profile-pill">
                 <div className="admin-avatar">AD</div>
@@ -685,8 +836,7 @@ function ProductsView({
       )
     )
       return;
-    removeKey(STORAGE_KEYS.products);
-    persistProducts(getProducts());
+    persistProducts(buildDefaultProducts());
     pushToast("Katalog produk telah di-reset ke pengaturan standar bawaan.");
   }
 
@@ -2302,5 +2452,58 @@ function ManualTransactionModal({
         </div>
       </form>
     </ModalShell>
+  );
+}
+
+/* ---------------------------------------------------------------------------
+   Load states — shown until the Supabase data arrives
+   ------------------------------------------------------------------------- */
+
+function ConsoleLoading() {
+  return (
+    <div
+      style={{
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: "#F1F5F9",
+        color: "#64748B",
+        fontSize: 14.5,
+      }}
+    >
+      Memuat dashboard admin…
+    </div>
+  );
+}
+
+function ConsoleError({ onRetry }: { onRetry: () => void }) {
+  return (
+    <div
+      style={{
+        minHeight: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 12,
+        padding: 24,
+        background: "#F1F5F9",
+        textAlign: "center",
+      }}
+    >
+      <h1 style={{ fontSize: 20, color: "#0F172A" }}>Gagal memuat data dashboard</h1>
+      <p style={{ fontSize: 14, color: "#64748B", maxWidth: 460, lineHeight: 1.6 }}>
+        Dashboard tidak dapat terhubung ke database. Periksa koneksi internet lalu coba lagi.
+      </p>
+      <button
+        type="button"
+        className="btn-primary-admin"
+        onClick={onRetry}
+        style={{ marginTop: 8 }}
+      >
+        Coba Lagi
+      </button>
+    </div>
   );
 }

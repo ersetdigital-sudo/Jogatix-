@@ -1,6 +1,11 @@
 import type { AdminProduct, AdminSettings, CategorySlug } from "@/types";
 import { categories } from "@/lib/catalog";
-import { STORAGE_KEYS, readJson, writeJson } from "@/lib/storage";
+
+/**
+ * Default admin configuration. These values are the seed for a fresh Supabase
+ * project (lib/supabase/store.ts inserts them on first run) and the source for
+ * the admin console's "Reset Bawaan" button.
+ */
 
 
 /** slug → display name, used when the admin form creates a new product. */
@@ -63,24 +68,4 @@ export function buildDefaultProducts(): AdminProduct[] {
     }
   }
   return flat;
-}
-
-export function getSettings(): AdminSettings {
-  const stored = readJson<Partial<AdminSettings>>(STORAGE_KEYS.settings, {});
-  return { ...defaultSettings, ...stored };
-}
-
-export function saveSettings(settings: AdminSettings): boolean {
-  return writeJson(STORAGE_KEYS.settings, settings);
-}
-
-/** Products the admin has edited, or the catalog defaults when untouched. */
-export function getProducts(): AdminProduct[] {
-  const stored = readJson<AdminProduct[] | null>(STORAGE_KEYS.products, null);
-  if (Array.isArray(stored) && stored.length > 0) return stored;
-  return buildDefaultProducts();
-}
-
-export function saveProducts(products: AdminProduct[]): boolean {
-  return writeJson(STORAGE_KEYS.products, products);
 }
