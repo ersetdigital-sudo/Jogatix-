@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from "next";
 import { Inter, JetBrains_Mono, Plus_Jakarta_Sans } from "next/font/google";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { SiteFooter } from "@/components/layout/SiteFooter";
-import { DemoBarGate } from "@/components/layout/DemoBarGate";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { organizationSchema, websiteSchema } from "@/lib/seo";
 import { siteConfig } from "@/lib/site";
@@ -79,7 +78,6 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
       <body suppressHydrationWarning>
         <JsonLd data={organizationSchema()} />
         <JsonLd data={websiteSchema()} />
-        <DemoBarGate />
         <SiteHeader />
         <main className="site-main">{children}</main>
         <SiteFooter />
