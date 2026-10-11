@@ -1,0 +1,7 @@
+/* Jogatix — Responsive utilities */
+@media (max-width: 768px) {
+  .container {
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+}
