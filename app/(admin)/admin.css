@@ -9,37 +9,49 @@
    Modern, Responsive, Dark-Slate & Indigo Professional Theme
    ========================================================================== */
 
-:root {
-  --admin-navy-dark: #090B17;
-  --admin-navy: #0E1126;
-  --admin-navy-card: #171B36;
-  --admin-navy-surface: #22274D;
-  --admin-navy-border: #2D3360;
+/* ==== Console token layer ==============================================
+   Structure borrowed from Alabaster Grid Console: light-first canvas, a
+   second cooler neutral for chrome, depth drawn with hairlines instead of
+   shadow bloom, and mono promoted to the numeric register.
 
-  --admin-primary: #4F46E5;
-  --admin-primary-hover: #4338CA;
+   Colour stays Jogatix. The site's committed world (indigo #4338CA, navy
+   #0E1126, lime #C7F36B, canvas #F8FAFC, hairline #E2E8F0) outranks the
+   style's teal, so only the style's *roles* are inherited here, not its hues.
+   ======================================================================= */
+:root {
+  --admin-navy-dark: #080A16;
+  --admin-navy: #0E1126;
+  --admin-navy-card: #171A35;
+  --admin-navy-surface: #22264A;
+  --admin-navy-border: rgba(255, 255, 255, 0.09);
+
+  --admin-primary: #4338CA;
+  --admin-primary-hover: #3730A3;
+  --admin-primary-active: #312E81;
   --admin-primary-light: #EEF2FF;
   --admin-primary-border: #C7D2FE;
 
   --admin-lime: #C7F36B;
   --admin-lime-hover: #B4E856;
 
-  --admin-bg: #F4F6FB;
+  --admin-bg: #F8FAFC;
   --admin-card-bg: #FFFFFF;
-  --admin-text-main: #0F172A;
+  --admin-text-main: #0E1126;
+  --admin-text-body: #334155;
   --admin-text-muted: #64748B;
   --admin-text-subtle: #94A3B8;
   --admin-border: #E2E8F0;
+  --admin-border-strong: #CBD5E1;
 
-  --admin-success: #10B981;
+  --admin-success: #059669;
   --admin-success-bg: #ECFDF5;
   --admin-success-border: #A7F3D0;
 
-  --admin-warning: #F59E0B;
+  --admin-warning: #D97706;
   --admin-warning-bg: #FFFBEB;
   --admin-warning-border: #FDE68A;
 
-  --admin-danger: #EF4444;
+  --admin-danger: #DC2626;
   --admin-danger-bg: #FEF2F2;
   --admin-danger-border: #FECACA;
 
@@ -47,15 +59,19 @@
   --admin-info-bg: #F0F9FF;
   --admin-info-border: #BAE6FD;
 
+  /* Tightened from the legacy 8/12/16/20 ladder so plates read tooled
+     rather than inflated. The legacy ladder is a named override. */
   --admin-radius-sm: 8px;
-  --admin-radius-md: 12px;
-  --admin-radius-lg: 16px;
-  --admin-radius-xl: 20px;
+  --admin-radius-md: 10px;
+  --admin-radius-lg: 12px;
+  --admin-radius-xl: 16px;
   --admin-radius-full: 9999px;
 
-  --admin-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --admin-shadow: 0 4px 18px -2px rgba(15, 23, 42, 0.06), 0 2px 6px -1px rgba(15, 23, 42, 0.04);
-  --admin-shadow-lg: 0 16px 36px -4px rgba(15, 23, 42, 0.12), 0 6px 14px -2px rgba(15, 23, 42, 0.06);
+  /* Elevation is declared once, by border — resting surfaces carry no
+     bloom. Only hover and overlays are allowed a real lift. */
+  --admin-shadow-sm: none;
+  --admin-shadow: none;
+  --admin-shadow-lg: 0 10px 24px -8px rgba(14, 17, 38, 0.14);
 
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-heading: 'Plus Jakarta Sans', var(--font-sans);
@@ -1409,4 +1425,361 @@ body.admin-body {
   --font-sans: var(--font-inter), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-heading: var(--font-plus-jakarta), var(--font-inter), -apple-system, sans-serif;
   --font-mono: var(--font-jetbrains-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+/* ==========================================================================
+   Console refinement layer
+   Applied on top of the ported stylesheet. Everything below is a deliberate
+   departure from the legacy look: hairline elevation, mono numerals, and
+   themed browser surfaces.
+   ========================================================================== */
+
+/* --- Browser surfaces -----------------------------------------------------
+   These ship with OS defaults that belong to no design system. Theming them
+   is the cheapest signal that the console was built rather than assembled. */
+::selection {
+  background: var(--admin-primary-light);
+  color: var(--admin-primary-active);
+}
+
+.admin-body {
+  caret-color: var(--admin-primary);
+}
+
+.admin-body *:focus-visible {
+  outline: 3px solid rgba(67, 56, 202, 0.35);
+  outline-offset: 2px;
+}
+
+.admin-body ::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.admin-body ::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.admin-body ::-webkit-scrollbar-thumb {
+  background: var(--admin-border-strong);
+  border: 3px solid var(--admin-bg);
+  border-radius: 9999px;
+}
+
+.admin-body ::-webkit-scrollbar-thumb:hover {
+  background: var(--admin-text-subtle);
+}
+
+/* --- Focus ring ------------------------------------------------------------
+   One ring recipe for every filled control, so focus is never ambiguous. */
+.admin-body input:focus-visible,
+.admin-body textarea:focus-visible,
+.admin-body select:focus-visible {
+  outline: none;
+  border-color: var(--admin-primary);
+  box-shadow: 0 0 0 3px rgba(67, 56, 202, 0.18);
+}
+
+/* --- Motion ---------------------------------------------------------------
+   Product surface: transitions confirm state, they do not perform. */
+.admin-card,
+.stat-card-modern,
+.btn-primary-admin,
+.btn-secondary-admin,
+.admin-data-table tbody tr {
+  transition-duration: 150ms;
+}
+
+/* --- Chrome: hairline, never bloom --------------------------------------- */
+.admin-topbar {
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+.admin-topbar-breadcrumbs-title,
+.topbar-breadcrumbs-title {
+  letter-spacing: -0.015em;
+}
+
+/* --- Numeric register ------------------------------------------------------
+   Every figure, ID and total is mono and tabular, so columns scan and add up. */
+.stat-value,
+.admin-data-table td[data-numeric],
+.admin-data-table td.numeric,
+.admin-data-table .tabular {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+  letter-spacing: 0.01em;
+}
+
+.stat-value {
+  font-weight: 600;
+  font-size: 24px;
+  letter-spacing: -0.01em;
+}
+
+.stat-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--admin-text-muted);
+}
+
+/* --- Plates and tables ---------------------------------------------------- */
+.admin-card,
+.stat-card-modern {
+  box-shadow: none;
+}
+
+.admin-card:hover,
+.stat-card-modern:hover {
+  box-shadow: none;
+  transform: none;
+}
+
+.admin-data-table th {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--admin-text-muted);
+}
+
+/* --- Buttons: flat fill plus a ring, no glow ------------------------------ */
+.btn-primary-admin,
+.btn-secondary-admin,
+.btn-danger-admin {
+  box-shadow: none;
+  transition: background-color 150ms ease-out, border-color 150ms ease-out,
+    box-shadow 150ms ease-out;
+}
+
+.btn-primary-admin:hover {
+  box-shadow: 0 0 0 3px rgba(67, 56, 202, 0.16);
+}
+
+.btn-primary-admin:active {
+  background: var(--admin-primary-active);
+  box-shadow: none;
+}
+
+.btn-secondary-admin:hover {
+  border-color: var(--admin-border-strong);
+  background: var(--admin-card-bg);
+}
+
+/* --- Badges: stamped micro caps ------------------------------------------- */
+.admin-badge,
+.nav-item-badge {
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- Auth shell ------------------------------------------------------------
+   Fixes the login page collapsing into the dashboard's body flex row. The
+   body is a flex container so .admin-layout can own the full width; this
+   wrapper does the same, then splits into a brand rail and the form stage. */
+.admin-auth {
+  flex: 1;
+  width: 100%;
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: minmax(0, 380px) minmax(0, 1fr);
+  background: var(--admin-bg);
+}
+
+.admin-auth-rail {
+  background: var(--admin-navy);
+  border-right: 1px solid var(--admin-navy-border);
+  color: #FFFFFF;
+  padding: 40px 36px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 48px;
+}
+
+.admin-auth-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.admin-auth-brand-mark {
+  width: 34px;
+  height: 34px;
+  border-radius: var(--admin-radius-md);
+  background: var(--admin-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #FFFFFF;
+}
+
+.admin-auth-brand-name {
+  font-family: var(--font-heading);
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+}
+
+.admin-auth-facts {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.admin-auth-fact {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #C7D2FE;
+}
+
+.admin-auth-fact-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 9999px;
+  background: var(--admin-lime);
+  margin-top: 7px;
+  flex-shrink: 0;
+}
+
+.admin-auth-stamp {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: #94A3B8;
+  border-top: 1px solid var(--admin-navy-border);
+  padding-top: 16px;
+  font-variant-numeric: tabular-nums;
+}
+
+.admin-auth-stage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 28px;
+}
+
+.admin-auth-panel {
+  width: 100%;
+  max-width: 380px;
+}
+
+.admin-auth-title {
+  font-family: var(--font-heading);
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  line-height: 1.15;
+  color: var(--admin-text-main);
+  margin: 0 0 8px;
+}
+
+.admin-auth-lede {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--admin-text-muted);
+  margin: 0 0 28px;
+  max-width: 62ch;
+}
+
+.admin-auth-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--admin-text-body);
+  margin-bottom: 8px;
+}
+
+.admin-auth-input {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius-md);
+  background: var(--admin-card-bg);
+  font-size: 15px;
+  font-family: inherit;
+  color: var(--admin-text-main);
+  transition: border-color 150ms ease-out, box-shadow 150ms ease-out;
+}
+
+.admin-auth-input::placeholder {
+  color: var(--admin-text-subtle);
+}
+
+.admin-auth-input[aria-invalid="true"] {
+  border-color: var(--admin-danger);
+}
+
+.admin-auth-submit {
+  width: 100%;
+  margin-top: 20px;
+  padding: 12px 18px;
+  border: 1px solid var(--admin-primary);
+  border-radius: var(--admin-radius-md);
+  background: var(--admin-primary);
+  color: #FFFFFF;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background-color 150ms ease-out, box-shadow 150ms ease-out;
+}
+
+.admin-auth-submit:hover:not(:disabled) {
+  background: var(--admin-primary-hover);
+  box-shadow: 0 0 0 3px rgba(67, 56, 202, 0.16);
+}
+
+.admin-auth-submit:active:not(:disabled) {
+  background: var(--admin-primary-active);
+  box-shadow: none;
+}
+
+.admin-auth-submit:disabled {
+  background: var(--admin-border);
+  border-color: var(--admin-border);
+  color: #475569;
+  cursor: not-allowed;
+}
+
+.admin-auth-error {
+  margin-top: 14px;
+  padding: 10px 12px;
+  border: 1px solid var(--admin-danger-border);
+  border-radius: var(--admin-radius-sm);
+  background: var(--admin-danger-bg);
+  color: #B91C1C;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.admin-auth-back {
+  display: inline-block;
+  margin-top: 24px;
+  font-size: 13px;
+  color: var(--admin-text-muted);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: color 150ms ease-out, border-color 150ms ease-out;
+}
+
+.admin-auth-back:hover {
+  color: var(--admin-primary);
+  border-bottom-color: var(--admin-primary-border);
+}
+
+@media (max-width: 860px) {
+  .admin-auth {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .admin-auth-rail {
+    display: none;
+  }
 }

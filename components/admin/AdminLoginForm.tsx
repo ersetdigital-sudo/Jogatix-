@@ -4,7 +4,11 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-/** Password gate for /admin — posts to /api/admin/session and stores the session cookie. */
+/**
+ * Password gate for /admin — posts to /api/admin/session and stores the
+ * session cookie. The two-column shell lives in admin.css (.admin-auth), so
+ * this component only carries markup and behaviour.
+ */
 export function AdminLoginForm() {
   const router = useRouter();
   const [password, setPassword] = useState("");
@@ -40,112 +44,84 @@ export function AdminLoginForm() {
   }
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: 24,
-        background: "#0E1126",
-      }}
-    >
-      <form
-        onSubmit={submit}
-        style={{
-          width: "100%",
-          maxWidth: 400,
-          background: "#FFFFFF",
-          borderRadius: 16,
-          padding: 32,
-          boxShadow: "0 24px 60px rgba(2, 6, 23, 0.45)",
-        }}
-      >
-        <div
-          style={{
-            fontSize: 12,
-            fontWeight: 700,
-            letterSpacing: "0.08em",
-            textTransform: "uppercase",
-            color: "#64748B",
-            marginBottom: 6,
-          }}
-        >
-          Jogatix Admin Console
+    <div className="admin-auth">
+      <aside className="admin-auth-rail">
+        <div className="admin-auth-brand">
+          <span className="admin-auth-brand-mark" aria-hidden="true">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="4" y="10.5" width="16" height="10.5" rx="2" />
+              <path d="M8 10.5V7.2a4 4 0 0 1 8 0v3.3" />
+            </svg>
+          </span>
+          <span className="admin-auth-brand-name">Jogatix</span>
         </div>
-        <h1 style={{ fontSize: 24, color: "#0E1126", marginBottom: 6 }}>Masuk sebagai admin</h1>
-        <p style={{ fontSize: 13.5, color: "#64748B", marginBottom: 24, lineHeight: 1.6 }}>
-          Dashboard ini mengelola katalog, pembayaran, dan transaksi pelanggan. Masukkan password
-          admin untuk melanjutkan.
-        </p>
 
-        <label
-          htmlFor="admin-password"
-          style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#334155", marginBottom: 6 }}
-        >
-          Password Admin
-        </label>
-        <input
-          id="admin-password"
-          type="password"
-          autoComplete="current-password"
-          autoFocus
-          value={password}
-          onChange={(event) => {
-            setPassword(event.target.value);
-            setError("");
-          }}
-          placeholder="••••••••"
-          style={{
-            width: "100%",
-            padding: "11px 14px",
-            borderRadius: 10,
-            border: `1.5px solid ${error ? "#FCA5A5" : "#CBD5E1"}`,
-            fontSize: 14,
-            color: "#0F172A",
-            outline: "none",
-          }}
-        />
-
-        {error && (
-          <div style={{ color: "#DC2626", fontSize: 13, marginTop: 10 }} role="alert">
-            {error}
+        <div className="admin-auth-facts">
+          <div className="admin-auth-fact">
+            <span className="admin-auth-fact-dot" aria-hidden="true" />
+            <span>Kelola katalog produk, harga, dan status penjualan.</span>
           </div>
-        )}
+          <div className="admin-auth-fact">
+            <span className="admin-auth-fact-dot" aria-hidden="true" />
+            <span>Pantau transaksi pelanggan dan status pembayarannya.</span>
+          </div>
+          <div className="admin-auth-fact">
+            <span className="admin-auth-fact-dot" aria-hidden="true" />
+            <span>Atur QRIS, rekening bank, dan e-wallet toko.</span>
+          </div>
+        </div>
 
-        <button
-          type="submit"
-          disabled={submitting || !password}
-          style={{
-            width: "100%",
-            marginTop: 22,
-            padding: "12px 16px",
-            borderRadius: 10,
-            border: "none",
-            background: submitting || !password ? "#A5B4FC" : "#4F46E5",
-            color: "#FFFFFF",
-            fontSize: 14.5,
-            fontWeight: 700,
-            cursor: submitting || !password ? "not-allowed" : "pointer",
-          }}
-        >
-          {submitting ? "Memverifikasi…" : "Masuk ke Dashboard"}
-        </button>
+        <div className="admin-auth-stamp">jogatix.vercel.app · sesi 12 jam</div>
+      </aside>
 
-        <Link
-          href="/"
-          style={{
-            display: "block",
-            textAlign: "center",
-            marginTop: 18,
-            fontSize: 13,
-            color: "#64748B",
-            textDecoration: "none",
-          }}
-        >
-          ← Kembali ke situs Jogatix
-        </Link>
-      </form>
+      <main className="admin-auth-stage">
+        <div className="admin-auth-panel">
+          <h1 className="admin-auth-title">Masuk ke console</h1>
+          <p className="admin-auth-lede">
+            Area ini khusus staf Jogatix. Masukkan password admin untuk membuka katalog,
+            pembayaran, dan transaksi.
+          </p>
+
+          <form onSubmit={submit} noValidate>
+            <label className="admin-auth-label" htmlFor="admin-password">
+              Password Admin
+            </label>
+            <input
+              id="admin-password"
+              className="admin-auth-input"
+              type="password"
+              autoComplete="current-password"
+              autoFocus
+              aria-invalid={error ? true : undefined}
+              aria-describedby={error ? "admin-auth-error" : undefined}
+              value={password}
+              onChange={(event) => {
+                setPassword(event.target.value);
+                setError("");
+              }}
+              placeholder="••••••••"
+            />
+
+            {error && (
+              <div className="admin-auth-error" id="admin-auth-error" role="alert">
+                {error}
+              </div>
+            )}
+
+            <button
+              type="submit"
+              className="admin-auth-submit"
+              disabled={submitting || !password}
+            >
+              {submitting ? "Memverifikasi…" : "Masuk ke Dashboard"}
+            </button>
+          </form>
+
+          <Link href="/" className="admin-auth-back">
+            ← Kembali ke situs Jogatix
+          </Link>
+        </div>
+      </main>
     </div>
   );
 }

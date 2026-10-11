@@ -9,3 +9,10 @@ coverage/
 
 .vercel
 .env*
+
+# Playwright CLI artifacts (browser snapshots + throwaway screenshots)
+.playwright-cli/
+/login-desktop.png
+/login-error.png
+/login-mobile.png
+/dashboard.png
