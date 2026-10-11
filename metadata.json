@@ -2,5 +2,5 @@
   "name": "Jogatix - Digital Commerce",
   "description": "Platform transaksi digital dan PPOB untuk pulsa, paket data, uang elektronik, dan pembayaran berbagai tagihan dengan alur transparan.",
   "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+  "majorCapabilities": []
 }
