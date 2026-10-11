@@ -1026,38 +1026,6 @@ body.admin-body {
   align-items: start;
 }
 
-.qris-dropzone {
-  border: 2px dashed #CBD5E1;
-  background: #F8FAFC;
-  border-radius: var(--admin-radius-lg);
-  padding: 28px;
-  text-align: center;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.qris-dropzone:hover, .qris-dropzone.dragover {
-  border-color: var(--admin-primary);
-  background: var(--admin-primary-light);
-}
-
-.qris-dropzone svg {
-  color: var(--admin-primary);
-  margin-bottom: 10px;
-}
-
-.qris-dropzone-title {
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--admin-text-main);
-  margin-bottom: 4px;
-}
-
-.qris-dropzone-subtitle {
-  font-size: 13px;
-  color: var(--admin-text-muted);
-}
-
 .qris-preview-card {
   background: #FFFFFF;
   border: 1px solid var(--admin-border);
@@ -1782,4 +1750,131 @@ body.admin-body {
   .admin-auth-rail {
     display: none;
   }
+}
+
+/* --- Image uploader --------------------------------------------------------
+   Reused by every console form that takes an image. Same vocabulary as the
+   rest of the surface: hairline plates, indigo for the single action. */
+.img-upload {
+  display: flex;
+  flex-direction: column;
+}
+
+.img-upload-preview {
+  position: relative;
+  background: var(--admin-card-bg);
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius-md);
+  padding: 12px;
+  margin-bottom: 12px;
+}
+
+.img-upload-preview-img {
+  display: block;
+  max-width: 100%;
+  max-height: 320px;
+  width: auto;
+  height: auto;
+  margin: 0 auto;
+  object-fit: contain;
+}
+
+.img-upload-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: var(--admin-radius-md);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--admin-text-body);
+}
+
+.img-upload-bar {
+  display: block;
+  width: 180px;
+  height: 4px;
+  border-radius: 9999px;
+  background: var(--admin-border);
+  overflow: hidden;
+}
+
+.img-upload-bar-fill {
+  display: block;
+  height: 100%;
+  background: var(--admin-primary);
+  transition: width 150ms ease-out;
+}
+
+.img-upload-drop {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 22px 16px;
+  border: 1px dashed var(--admin-border-strong);
+  border-radius: var(--admin-radius-md);
+  background: var(--admin-card-bg);
+  color: var(--admin-text-subtle);
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 150ms ease-out, background-color 150ms ease-out, color 150ms ease-out;
+}
+
+.img-upload-drop:hover {
+  border-color: var(--admin-primary-border);
+  color: var(--admin-text-muted);
+}
+
+.img-upload-drop.dragover {
+  border-color: var(--admin-primary);
+  background: var(--admin-primary-light);
+  color: var(--admin-primary);
+}
+
+.img-upload-drop.busy {
+  cursor: progress;
+  opacity: 0.7;
+}
+
+.img-upload-drop-title {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--admin-text-main);
+}
+
+.img-upload-drop-sub {
+  font-size: 12px;
+  color: var(--admin-text-muted);
+}
+
+.img-upload-error {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--admin-danger-border);
+  border-radius: var(--admin-radius-sm);
+  background: var(--admin-danger-bg);
+  color: #B91C1C;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.img-upload-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.btn-secondary-admin:disabled,
+.btn-danger-admin:disabled {
+  background: var(--admin-border);
+  border-color: var(--admin-border);
+  color: #475569;
+  cursor: not-allowed;
 }

@@ -6,6 +6,7 @@ import { useCallback, useEffect, useState } from "react";
 import { ArrowRightIcon, ClockCheckIcon, SearchIcon } from "@/components/icons";
 import { useSearchParam } from "@/hooks/use-search-param";
 import { isCategorySlug } from "@/lib/catalog";
+import { cloudinarySrc } from "@/lib/cloudinary-url";
 import { useLiveCatalog } from "@/hooks/use-live-catalog";
 import { apiFetch } from "@/lib/fetcher";
 import { rupiah, toWhatsAppLink } from "@/lib/format";
@@ -819,8 +820,11 @@ function PaymentInstructions({
           }}
         >
           {settings.qrisImage ? (
+            // Cloudinary owns the transform (f_auto,q_auto,w_360); Next's
+            // optimizer is bypassed on purpose so the delivery URL is served
+            // as-is. 360 device pixels keeps the code scannable on retina.
             <Image
-              src={settings.qrisImage}
+              src={cloudinarySrc(settings.qrisImage, { width: 360 })}
               alt="Barcode QRIS merchant Jogatix"
               width={180}
               height={180}

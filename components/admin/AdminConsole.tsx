@@ -3,6 +3,9 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ImageUploader } from "@/components/admin/ImageUploader";
+import { deleteCloudinaryAsset } from "@/lib/cloudinary-client";
+import { cloudinarySrc, publicIdFromUrl } from "@/lib/cloudinary-url";
 import { CATEGORY_NAMES, buildDefaultProducts } from "@/lib/admin-defaults";
 import { apiFetch } from "@/lib/fetcher";
 import { rupiah } from "@/lib/format";
@@ -1011,8 +1014,6 @@ function PaymentView({
   onAddBank: () => void;
   onEditEwallet: (id: string) => void;
 }) {
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [dragover, setDragover] = useState(false);
   const [draft, setDraft] = useState({
     qrisActive: settings.qrisActive,
     qrisMerchant: settings.qrisMerchant,
@@ -1021,18 +1022,19 @@ function PaymentView({
     adminFeeBill: settings.adminFeeBill,
   });
 
-  function processFile(file: File) {
-    if (!file.type.startsWith("image/")) {
-      window.alert("Silakan pilih file gambar yang valid (PNG, JPG, JPEG).");
-      return;
+  /**
+   * The stored value is a Cloudinary delivery URL, not the megabytes of base64
+   * this form used to write into the database on every pick. The asset that
+   * gets replaced is removed too, so the folder does not accumulate orphans —
+   * but a failed delete never blocks the save.
+   */
+  function handleQrisUploaded(url: string) {
+    if (settings.qrisImage && settings.qrisImage !== url) {
+      const previousId = publicIdFromUrl(settings.qrisImage);
+      if (previousId) void deleteCloudinaryAsset(previousId);
     }
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const base64 = String(event.target?.result ?? "");
-      persistSettings({ ...settings, qrisImage: base64 });
-      pushToast("Foto QRIS berhasil diunggah dan disimpan!");
-    };
-    reader.readAsDataURL(file);
+    persistSettings({ ...settings, qrisImage: url });
+    pushToast("Foto QRIS berhasil diunggah ke Cloudinary!");
   }
 
   function saveQris(event: React.FormEvent) {
@@ -1050,6 +1052,8 @@ function PaymentView({
 
   function clearQris() {
     if (!window.confirm("Gunakan kembali template QRIS bawaan Jogatix?")) return;
+    const previousId = publicIdFromUrl(settings.qrisImage);
+    if (previousId) void deleteCloudinaryAsset(previousId);
     persistSettings({ ...settings, qrisImage: "" });
     pushToast("Foto QRIS di-reset ke template standar.");
   }
@@ -1116,42 +1120,15 @@ function PaymentView({
                 />
               </div>
 
-              <div className="form-group-admin">
-                <label className="form-label-admin">Unggah Foto Barcode QRIS</label>
-                <div
-                  className={`qris-dropzone${dragover ? " dragover" : ""}`}
-                  id="qris-dropzone"
-                  onClick={() => fileInputRef.current?.click()}
-                  onDragOver={(e) => {
-                    e.preventDefault();
-                    setDragover(true);
-                  }}
-                  onDragLeave={() => setDragover(false)}
-                  onDrop={(e) => {
-                    e.preventDefault();
-                    setDragover(false);
-                    if (e.dataTransfer.files?.[0]) processFile(e.dataTransfer.files[0]);
-                  }}
-                >
-                  <Stroke width={36} height={36}>
-                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-                    <circle cx="8.5" cy="8.5" r="1.5" />
-                    <polyline points="21 15 16 10 5 21" />
-                  </Stroke>
-                  <div className="qris-dropzone-title">Klik atau Tarik Foto QRIS ke Sini</div>
-                  <div className="qris-dropzone-subtitle">Mendukung format PNG, JPG, JPEG (Ukuran gambar disarankan persegi).</div>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    id="qris-file-input"
-                    accept="image/*"
-                    style={{ display: "none" }}
-                    onChange={(e) => {
-                      if (e.target.files?.[0]) processFile(e.target.files[0]);
-                    }}
-                  />
-                </div>
-              </div>
+              <ImageUploader
+                id="qris-file-input"
+                label="Unggah Foto Barcode QRIS"
+                value={settings.qrisImage}
+                onUploaded={handleQrisUploaded}
+                onCleared={clearQris}
+                previewWidth={640}
+                clearLabel="Gunakan Barcode Bawaan"
+              />
 
               <div className="form-group-admin">
                 <label className="form-label-admin" htmlFor="setting-qris-instructions">Petunjuk Scan untuk Pembeli</label>
@@ -1196,8 +1173,9 @@ function PaymentView({
                 {settings.qrisImage ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
-                    src={settings.qrisImage}
+                    src={cloudinarySrc(settings.qrisImage, { width: 512 })}
                     alt="Pratinjau barcode QRIS merchant"
+                    loading="lazy"
                     style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }}
                   />
                 ) : (
@@ -1221,16 +1199,6 @@ function PaymentView({
               <div style={{ fontSize: 11.5, color: "#64748B", marginBottom: 12 }}>
                 Dicetak &amp; diverifikasi standar ASPI / Bank Indonesia
               </div>
-
-              <button
-                type="button"
-                className="btn-secondary-admin"
-                id="btn-clear-qris-image"
-                style={{ width: "100%", fontSize: 12.5 }}
-                onClick={clearQris}
-              >
-                Gunakan Barcode Bawaan
-              </button>
             </div>
           </div>
         </div>
